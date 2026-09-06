@@ -240,6 +240,27 @@ class TestFCFSStopsAdded:
 
         assert elevator.stops == [3]
 
+    def test_hall_call_without_passenger_still_appends_pickup(self) -> None:
+        """FCFS does not need a destination or Passenger to dispatch a call."""
+        request = ElevatorRequest(
+            id="R1",
+            origin_floor=6,
+            direction=Direction.UP,
+            timestamp=0,
+        )
+        elevator = _make_elevator("E1", current_floor=4)
+        elevator.direction = Direction.UP
+        elevator.add_stop(10)
+
+        results = FCFSDispatch().dispatch(
+            pending_requests=[request],
+            elevators=[elevator],
+        )
+
+        assert results[0].passenger_id is None
+        assert request.assigned_elevator_id == "E1"
+        assert elevator.stops == [10, 6]
+
 
 class TestFCFSRoutePreserved:
     """Pre-existing stops are not corrupted by dispatch."""

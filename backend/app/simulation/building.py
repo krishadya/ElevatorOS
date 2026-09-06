@@ -149,6 +149,28 @@ class Building:
             )
         self.active_requests.append(request)
 
+    def remove_serviced_requests(
+        self, elevator_id: str, floor: int
+    ) -> list[ElevatorRequest]:
+        """Remove hall calls served when an assigned elevator opens at a floor.
+
+        A hall call is served at pickup: its assigned elevator has reached the
+        origin floor and opened its doors. The remaining active requests keep
+        their original order for deterministic behavior.
+        """
+        serviced: list[ElevatorRequest] = []
+        remaining: list[ElevatorRequest] = []
+        for request in self.active_requests:
+            if (
+                request.assigned_elevator_id == elevator_id
+                and request.origin_floor == floor
+            ):
+                serviced.append(request)
+            else:
+                remaining.append(request)
+        self.active_requests = remaining
+        return serviced
+
     def remove_waiting_passenger(self, passenger_id: str) -> Passenger:
         """Remove a passenger from the waiting list (e.g. when they board).
 

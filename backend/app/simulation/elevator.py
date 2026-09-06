@@ -80,6 +80,25 @@ class Elevator:
         self._validate_floor(floor)
         self.stops.append(floor)
 
+    def insert_stop(self, index: int, floor: int) -> None:
+        """Insert a validated floor at an explicit route position.
+
+        Route ordering remains the responsibility of the caller (typically a
+        dispatch algorithm). This method only validates the floor and
+        preserves the existing stops around the insertion point.
+
+        Raises:
+            ValueError: If the floor is outside this elevator's range.
+            IndexError: If index is not a valid insertion position.
+        """
+        self._validate_floor(floor)
+        if not 0 <= index <= len(self.stops):
+            raise IndexError(
+                f"Stop insertion index {index} is outside route bounds "
+                f"[0, {len(self.stops)}]"
+            )
+        self.stops.insert(index, floor)
+
     def remove_stop(self, floor: int) -> None:
         """Remove a floor from the stop list (no-op if not present)."""
         if floor in self.stops:

@@ -65,6 +65,68 @@ def _make_elevator(
 # ── Tests ────────────────────────────────────────────────────────────
 
 
+class TestEnRoutePickupInsertion:
+    """Tier 1 calls are inserted before the car's farther stop."""
+
+    def test_up_call_inserts_before_farther_up_stop(self) -> None:
+        request = ElevatorRequest(
+            id="R1",
+            origin_floor=6,
+            direction=Direction.UP,
+            timestamp=0,
+        )
+        e1 = _make_elevator("E1", current_floor=4, direction=Direction.UP)
+        e2 = _make_elevator("E2", current_floor=5, direction=Direction.DOWN)
+        e1.add_stop(10)
+
+        results = NearestSuitableCarDispatch().dispatch(
+            pending_requests=[request],
+            elevators=[e1, e2],
+        )
+
+        assert results[0].elevator_id == "E1"
+        assert e1.stops == [6, 10]
+        assert e2.stops == []
+
+    def test_down_call_inserts_before_farther_down_stop(self) -> None:
+        request = ElevatorRequest(
+            id="R1",
+            origin_floor=6,
+            direction=Direction.DOWN,
+            timestamp=0,
+        )
+        e1 = _make_elevator("E1", current_floor=9, direction=Direction.DOWN)
+        e2 = _make_elevator("E2", current_floor=7, direction=Direction.UP)
+        e1.add_stop(3)
+
+        results = NearestSuitableCarDispatch().dispatch(
+            pending_requests=[request],
+            elevators=[e1, e2],
+        )
+
+        assert results[0].elevator_id == "E1"
+        assert e1.stops == [6, 3]
+        assert e2.stops == []
+
+    def test_en_route_insertion_is_deterministic(self) -> None:
+        def dispatch_route() -> list[int]:
+            request = ElevatorRequest(
+                id="R1",
+                origin_floor=6,
+                direction=Direction.UP,
+                timestamp=0,
+            )
+            elevator = _make_elevator(
+                "E1", current_floor=4, direction=Direction.UP
+            )
+            elevator.add_stop(10)
+
+            NearestSuitableCarDispatch().dispatch([request], [elevator])
+            return elevator.stops
+
+        assert dispatch_route() == dispatch_route() == [6, 10]
+
+
 class TestMatchingDirectionBeatsCloser:
     """Tier 1 (matching direction) beats a physically closer car."""
 

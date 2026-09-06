@@ -10,14 +10,15 @@ from app.simulation.enums import Direction
 
 @dataclass
 class ElevatorRequest:
-    """A hall-call request generated when a passenger presses an elevator button.
+    """A hall-call request generated when a user presses an elevator button.
 
     Attributes:
         id: Unique request identifier.
         origin_floor: Floor where the request was made.
         direction: Requested travel direction.
         timestamp: Simulation tick when the request was created.
-        passenger_id: ID of the passenger who made the request.
+        passenger_id: Optional ID of a Passenger associated with this request.
+            Hall calls can exist before a passenger chooses a destination.
         assigned_elevator_id: ID of the elevator assigned to serve this
             request (None until a dispatch algorithm assigns one).
     """
@@ -26,7 +27,7 @@ class ElevatorRequest:
     origin_floor: int
     direction: Direction
     timestamp: int
-    passenger_id: str
+    passenger_id: Optional[str] = None
     assigned_elevator_id: Optional[str] = None
 
     @property

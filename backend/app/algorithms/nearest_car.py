@@ -28,6 +28,10 @@ Within the same tier, ties are broken by:
 
 Request processing order: oldest-first by (timestamp, request_id),
 same as FCFS.
+
+For a Tier 1 assignment, the pickup floor is inserted before the first
+farther stop in the car's current direction. Other suitability tiers retain
+append behavior.
 """
 
 from __future__ import annotations
@@ -87,6 +91,31 @@ def _suitability_key(
     return (4, distance, elevator.id)
 
 
+def _add_pickup_stop(elevator: Elevator, request: ElevatorRequest) -> None:
+    """Add a pickup stop, inserting it only when it is on the current path.
+
+    A matching-direction elevator moving toward the call should stop before
+    its first farther stop in that direction. All other cases retain simple
+    append behavior.
+    """
+    if (
+        _is_moving_toward(elevator, request.origin_floor)
+        and elevator.direction == request.direction
+    ):
+        for index, stop in enumerate(elevator.stops):
+            if (
+                elevator.direction == Direction.UP
+                and stop > request.origin_floor
+            ) or (
+                elevator.direction == Direction.DOWN
+                and stop < request.origin_floor
+            ):
+                elevator.insert_stop(index, request.origin_floor)
+                return
+
+    elevator.add_stop(request.origin_floor)
+
+
 class NearestSuitableCarDispatch(DispatchAlgorithm):
     """Direction-aware elevator dispatch.
 
@@ -101,14 +130,14 @@ class NearestSuitableCarDispatch(DispatchAlgorithm):
         self,
         pending_requests: list[ElevatorRequest],
         elevators: list[Elevator],
-        passengers: dict[str, Passenger],
+        passengers: dict[str, Passenger] | None = None,
     ) -> list[DispatchResult]:
         """Assign pending requests using direction-aware suitability.
 
         Args:
             pending_requests: Unassigned hall-call requests.
             elevators: All elevators in the building.
-            passengers: Passenger ID → Passenger lookup.
+            passengers: Optional passenger ID → Passenger lookup.
 
         Returns:
             List of ``DispatchResult`` for each new assignment.
@@ -136,22 +165,23 @@ class NearestSuitableCarDispatch(DispatchAlgorithm):
                 ),
             )
 
-            # Look up the passenger to set assignment
-            passenger = passengers[request.passenger_id]
-
             # Assign the request
             request.assigned_elevator_id = chosen.id
-            passenger.assigned_elevator_id = chosen.id
+            if request.passenger_id is not None:
+                if passengers is None:
+                    raise ValueError(
+                        "passengers is required for a request with passenger_id"
+                    )
+                passengers[request.passenger_id].assigned_elevator_id = chosen.id
 
-            # Add ONLY the pickup floor to the route.
             # The destination is added later via a CarRequest.
-            chosen.add_stop(request.origin_floor)
+            _add_pickup_stop(chosen, request)
 
             results.append(
                 DispatchResult(
                     request_id=request.id,
                     elevator_id=chosen.id,
-                    passenger_id=passenger.id,
+                    passenger_id=request.passenger_id,
                 )
             )
 

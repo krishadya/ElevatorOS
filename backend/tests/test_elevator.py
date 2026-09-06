@@ -137,6 +137,15 @@ class TestElevatorStops:
         e.add_stop(5)
         assert e.stops == [5, 2, 5]
 
+    def test_insert_stop_preserves_existing_route_order(self):
+        e = Elevator(id="E1", min_floor=1, max_floor=10)
+        e.add_stop(5)
+        e.add_stop(9)
+
+        e.insert_stop(1, 7)
+
+        assert e.stops == [5, 7, 9]
+
 
 # ── Passenger boarding & discharge ───────────────────────────────────
 

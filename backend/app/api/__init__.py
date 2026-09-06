@@ -1,1 +1,1 @@
-"""FastAPI routes and WebSocket handlers (future)."""
+"""FastAPI support for the in-memory ElevatorOS demo."""

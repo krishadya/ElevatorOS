@@ -24,6 +24,7 @@ from app.simulation.enums import (
     PassengerState,
 )
 from app.simulation.passenger import Passenger
+from app.simulation.request import ElevatorRequest
 
 
 # ── Helpers ──────────────────────────────────────────────────────────
@@ -284,6 +285,46 @@ class TestEngineDoorLifecycle:
 
         idle_events = _events_of_type(engine.events, EventType.ELEVATOR_IDLE)
         assert len(idle_events) >= 1
+
+
+# ── Hall-call lifecycle ─────────────────────────────────────────────
+
+
+class TestEngineHallCallLifecycle:
+    """Verify active hall calls are cleared once pickup doors open."""
+
+    def test_assigned_hall_call_removed_when_doors_open_at_pickup(self):
+        building = _make_simple_building(num_elevators=2)
+        engine = _make_engine(building)
+        e1 = building.elevators[0]
+
+        served_call = ElevatorRequest(
+            id="R1",
+            origin_floor=2,
+            direction=Direction.UP,
+            timestamp=0,
+            assigned_elevator_id="E1",
+        )
+        other_call = ElevatorRequest(
+            id="R2",
+            origin_floor=2,
+            direction=Direction.UP,
+            timestamp=0,
+            assigned_elevator_id="E2",
+        )
+        building.add_request(served_call)
+        building.add_request(other_call)
+        e1.add_stop(2)
+
+        for _ in range(50):
+            events = engine.tick()
+            if _events_of_type(events, EventType.DOORS_OPEN):
+                break
+        else:
+            pytest.fail("Elevator did not open doors at the pickup floor")
+
+        assert served_call not in building.active_requests
+        assert building.active_requests == [other_call]
 
 
 # ── Passenger discharge ─────────────────────────────────────────────
@@ -769,4 +810,3 @@ class TestEngineRegression:
 
         assert p.state == PassengerState.ARRIVED
         assert p.dropoff_time is not None
-

@@ -14,7 +14,8 @@ How it works:
     4. Append ONLY the pickup floor (``request.origin_floor``) to the
        chosen elevator's stop list. The destination is added later
        via a ``CarRequest`` when the passenger enters the elevator.
-    5. Mark the request and passenger as assigned to that elevator.
+    5. Mark the request, and any associated passenger, as assigned to that
+       elevator.
 """
 
 from __future__ import annotations
@@ -37,14 +38,14 @@ class FCFSDispatch(DispatchAlgorithm):
         self,
         pending_requests: list[ElevatorRequest],
         elevators: list[Elevator],
-        passengers: dict[str, Passenger],
+        passengers: dict[str, Passenger] | None = None,
     ) -> list[DispatchResult]:
         """Assign pending requests oldest-first.
 
         Args:
             pending_requests: Unassigned hall-call requests.
             elevators: All elevators in the building.
-            passengers: Passenger ID → Passenger lookup.
+            passengers: Optional passenger ID → Passenger lookup.
 
         Returns:
             List of ``DispatchResult`` for each new assignment.
@@ -67,12 +68,14 @@ class FCFSDispatch(DispatchAlgorithm):
             # Pick elevator with fewest stops, tie-break on elevator ID
             chosen = min(elevators, key=lambda e: (len(e.stops), e.id))
 
-            # Look up the passenger to set assignment
-            passenger = passengers[request.passenger_id]
-
             # Assign the request
             request.assigned_elevator_id = chosen.id
-            passenger.assigned_elevator_id = chosen.id
+            if request.passenger_id is not None:
+                if passengers is None:
+                    raise ValueError(
+                        "passengers is required for a request with passenger_id"
+                    )
+                passengers[request.passenger_id].assigned_elevator_id = chosen.id
 
             # Add ONLY the pickup floor to the route.
             # The destination is added later via a CarRequest.
@@ -82,7 +85,7 @@ class FCFSDispatch(DispatchAlgorithm):
                 DispatchResult(
                     request_id=request.id,
                     elevator_id=chosen.id,
-                    passenger_id=passenger.id,
+                    passenger_id=request.passenger_id,
                 )
             )
 

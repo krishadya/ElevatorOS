@@ -19,7 +19,7 @@ Use this checklist for every milestone review. The reviewer must be independent 
 
 - [ ] **Floor boundaries**: Elevators cannot move outside their `[min_floor, max_floor]` range
 - [ ] **Capacity**: Elevators reject boarding when at capacity
-- [ ] **Passenger lifecycle**: State transitions follow `WAITING → RIDING → ARRIVED`
+- [ ] **Passenger lifecycle**: State transitions follow `WAITING → BOARDING → RIDING → ARRIVED`
 - [ ] **Boarding guards**: Only `WAITING` passengers can board; assignment conflicts are rejected
 - [ ] **Discharge guards**: Passengers can only be discharged at their destination floor
 - [ ] Invalid operations raise clear errors (not silent no-ops or corrupted state)
@@ -35,7 +35,7 @@ Use this checklist for every milestone review. The reviewer must be independent 
 - [ ] Passenger state transitions are explicit and validated
 - [ ] Elevator direction changes are explicit
 - [ ] Door state is checked before movement
-- [ ] `BOARDING` state is reserved for future milestone (documented, not used)
+- [ ] `BOARDING` state is used for the deterministic one-tick boarding transition
 
 ## Architecture / Coupling
 

@@ -255,6 +255,10 @@ class SimulationEngine:
         rt.door_timer -= 1
         if rt.door_timer <= 0:
             elev.finish_opening()
+            self.building.remove_serviced_requests(
+                elevator_id=elev.id,
+                floor=elev.current_floor,
+            )
             events.append(SimulationEvent(
                 tick=current_tick,
                 event_type=EventType.DOORS_OPEN,

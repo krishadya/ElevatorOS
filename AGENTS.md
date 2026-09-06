@@ -10,7 +10,7 @@ All work must preserve this identity. Do not add unrelated features.
 
 - **Backend simulation logic must remain independent of FastAPI, frontend, WebSockets, and databases.** Domain models are pure Python dataclasses with no framework dependencies.
 - **Scheduling algorithms must be interchangeable.** No algorithm logic may be embedded inside `Elevator`, `Building`, `Passenger`, or other domain models. Algorithms operate externally via public methods like `add_stop()` and `remove_stop()`.
-- **Domain models enforce physical invariants.** Elevators respect floor boundaries and capacity. Passengers follow a strict lifecycle (`WAITING → RIDING → ARRIVED`). The simulation must reject physically impossible operations with clear errors.
+- **Domain models enforce physical invariants.** Elevators respect floor boundaries and capacity. Passengers follow a strict lifecycle (`WAITING → BOARDING → RIDING → ARRIVED`). The simulation must reject physically impossible operations with clear errors.
 - **Deterministic simulation behavior is non-negotiable.** The `SimulationClock` is purely tick-based with no wall-clock dependency. Two simulation runs with the same inputs must produce identical outputs.
 
 ## Scope Rules
