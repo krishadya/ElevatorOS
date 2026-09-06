@@ -42,8 +42,10 @@ class DispatchAlgorithm(ABC):
     - Only assign requests that are not already assigned.
     - Set ``request.assigned_elevator_id`` and
       ``passenger.assigned_elevator_id`` for each assignment.
-    - Add the pickup and destination floors to the chosen elevator's
-      stop list via ``elevator.add_stop()``.
+    - Add ONLY the pickup floor (``request.origin_floor``) to the
+      chosen elevator's stop list via ``elevator.add_stop()``.
+      The destination floor is added later via a ``CarRequest``
+      when the passenger enters the elevator and selects a floor.
     - Not modify or remove existing stops.
     """
 
@@ -60,8 +62,7 @@ class DispatchAlgorithm(ABC):
             pending_requests: Unassigned ``ElevatorRequest`` objects.
             elevators: All available elevators in the building.
             passengers: Lookup from passenger ID to ``Passenger`` object
-                so the algorithm can read destination floors and set
-                ``assigned_elevator_id``.
+                so the algorithm can set ``assigned_elevator_id``.
 
         Returns:
             A list of ``DispatchResult`` recording each assignment made.

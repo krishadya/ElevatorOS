@@ -167,7 +167,7 @@ class TestFCFSMultipleElevators:
         # R1 → E1 (both start with 0 stops, tie-break: E1 < E2)
         assert results[0].request_id == "R1"
         assert results[0].elevator_id == "E1"
-        # R2 → E2 (E1 now has 2 stops, E2 has 0)
+        # R2 → E2 (E1 now has 1 pickup stop, E2 has 0)
         assert results[1].request_id == "R2"
         assert results[1].elevator_id == "E2"
 
@@ -223,10 +223,10 @@ class TestFCFSPassengerAssignment:
 
 
 class TestFCFSStopsAdded:
-    """Pickup and destination floors are added to the elevator's route."""
+    """Only the pickup floor is added to the elevator's route by dispatch."""
 
-    def test_pickup_and_destination_added(self) -> None:
-        """Both the origin (pickup) and destination floors appear in stops."""
+    def test_pickup_only_added(self) -> None:
+        """Dispatch adds origin_floor as a stop; destination is NOT added."""
         p1 = _make_passenger("P1", origin=3, destination=7)
         r1 = _make_request("R1", origin=3, direction=Direction.UP, timestamp=0, passenger_id="P1")
         elevator = _make_elevator("E1")
@@ -238,7 +238,7 @@ class TestFCFSStopsAdded:
             passengers={"P1": p1},
         )
 
-        assert elevator.stops == [3, 7]
+        assert elevator.stops == [3]
 
 
 class TestFCFSRoutePreserved:
@@ -260,8 +260,8 @@ class TestFCFSRoutePreserved:
             passengers={"P1": p1},
         )
 
-        # Existing stops [2, 5] remain in order; new stops appended
-        assert elevator.stops == [2, 5, 4, 8]
+        # Existing stops [2, 5] remain in order; pickup floor appended
+        assert elevator.stops == [2, 5, 4]
 
 
 class TestFCFSElevatorAtPickupFloor:
@@ -283,7 +283,7 @@ class TestFCFSElevatorAtPickupFloor:
 
         assert p1.assigned_elevator_id == "E1"
         # Pickup floor 1 is still added — the engine processes it correctly
-        assert elevator.stops == [1, 6]
+        assert elevator.stops == [1]
 
 
 class TestFCFSDeterministicReplay:

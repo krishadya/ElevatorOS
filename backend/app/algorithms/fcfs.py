@@ -11,8 +11,9 @@ How it works:
     2. Skip any request that is already assigned.
     3. For each unassigned request, pick the elevator with the fewest
        stops. Ties are broken by elevator ID (lexicographic).
-    4. Append the pickup floor, then the destination floor, to the
-       chosen elevator's stop list.
+    4. Append ONLY the pickup floor (``request.origin_floor``) to the
+       chosen elevator's stop list. The destination is added later
+       via a ``CarRequest`` when the passenger enters the elevator.
     5. Mark the request and passenger as assigned to that elevator.
 """
 
@@ -66,16 +67,16 @@ class FCFSDispatch(DispatchAlgorithm):
             # Pick elevator with fewest stops, tie-break on elevator ID
             chosen = min(elevators, key=lambda e: (len(e.stops), e.id))
 
-            # Look up the passenger to get destination floor
+            # Look up the passenger to set assignment
             passenger = passengers[request.passenger_id]
 
             # Assign the request
             request.assigned_elevator_id = chosen.id
             passenger.assigned_elevator_id = chosen.id
 
-            # Add pickup floor, then destination floor to the route
-            chosen.add_stop(passenger.origin_floor)
-            chosen.add_stop(passenger.destination_floor)
+            # Add ONLY the pickup floor to the route.
+            # The destination is added later via a CarRequest.
+            chosen.add_stop(request.origin_floor)
 
             results.append(
                 DispatchResult(

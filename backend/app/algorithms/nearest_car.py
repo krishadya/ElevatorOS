@@ -136,16 +136,16 @@ class NearestSuitableCarDispatch(DispatchAlgorithm):
                 ),
             )
 
-            # Look up the passenger
+            # Look up the passenger to set assignment
             passenger = passengers[request.passenger_id]
 
             # Assign the request
             request.assigned_elevator_id = chosen.id
             passenger.assigned_elevator_id = chosen.id
 
-            # Add pickup floor, then destination floor to the route
-            chosen.add_stop(passenger.origin_floor)
-            chosen.add_stop(passenger.destination_floor)
+            # Add ONLY the pickup floor to the route.
+            # The destination is added later via a CarRequest.
+            chosen.add_stop(request.origin_floor)
 
             results.append(
                 DispatchResult(

@@ -258,8 +258,8 @@ class TestPassengerRequestAssignmentConsistency:
         assert len(results) == 1
         assert r1.assigned_elevator_id == "E1"
         assert p1.assigned_elevator_id == "E1"
-        # Pickup and destination added to stops
-        assert e1.stops == [3, 7]
+        # Only pickup floor is added by dispatch
+        assert e1.stops == [3]
 
 
 class TestRequestAssignedOnlyOnce:
@@ -359,6 +359,6 @@ class TestFCFSStillWorks:
         # FCFS: R1 → E1 (both 0 stops, E1 < E2 by ID)
         assert results[0].request_id == "R1"
         assert results[0].elevator_id == "E1"
-        # FCFS: R2 → E2 (E1 now has 2 stops, E2 has 0)
+        # FCFS: R2 → E2 (E1 now has 1 pickup stop, E2 has 0)
         assert results[1].request_id == "R2"
         assert results[1].elevator_id == "E2"
