@@ -1,51 +1,236 @@
-# ElevatorOS
+# ElevatorOS — Interactive Elevator Dispatch Simulator
 
-A real-time multi-elevator dispatch simulation and algorithm benchmarking platform.
+**A deterministic multi-elevator simulation built with React, TypeScript, FastAPI, and Python.**
 
-## Project Structure
+ElevatorOS lets users create hall calls, compare dispatch algorithms, watch elevators move through explicit state transitions, and select in-car destinations through a live interactive interface.
 
+![Python](https://img.shields.io/badge/Python-3.11%2B-3776AB?logo=python&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.115%2B-009688?logo=fastapi&logoColor=white)
+![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=111827)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.7-3178C6?logo=typescript&logoColor=white)
+![Tests](https://img.shields.io/badge/Tests-188%20passing-22c55e)
+![Live Deployment](https://img.shields.io/badge/Deployment-Live-2563eb?logo=render&logoColor=white)
+
+[Live App](https://elevatoros.onrender.com) • [Features](#features) • [Architecture](#architecture) • [Algorithms](#dispatch-algorithms) • [Testing](#testing)
+
+---
+
+## Why I Built This
+
+I built ElevatorOS to explore elevator dispatch beyond a static algorithm exercise: deterministic simulation, state-machine-driven movement, a clean backend/frontend boundary, and the small interaction details that matter in a real control surface. It is a compact way to compare dispatch choices while keeping every assignment, route change, and door transition observable and reproducible.
+
+---
+
+## Preview
+
+![ElevatorOS UI](docs/elevatoros-ui.png)
+
+---
+
+## Features
+
+| Area | What it includes |
+| --- | --- |
+| **Simulation** | 10-floor building, two elevators, deterministic ticks, Play, Pause, Step, and Reset controls |
+| **Dispatch** | FCFS baseline and direction-aware Nearest Suitable Car selection with en-route pickup insertion |
+| **Interaction** | UP/DOWN hall calls, in-car destinations, live elevator status, active assignments, and recent events |
+| **Reliability** | Physical invariant checks, duplicate hall-call protection, duplicate car-destination protection, and deterministic replay |
+
+---
+
+## Architecture
+
+```text
+React Frontend
+      |
+      v
+FastAPI API
+      |
+      v
+Dispatch Algorithm
+      |
+      v
+Elevator Route / Stops
+      |
+      v
+Deterministic Simulation Engine
+      |
+      v
+Elevator State Machine
 ```
-ElevatorOS/
-├── backend/
-│   ├── app/
-│   │   ├── simulation/    # Core domain models & clock
-│   │   ├── algorithms/    # Dispatch strategies (future)
-│   │   ├── traffic/       # Passenger generation (future)
-│   │   ├── metrics/       # KPI tracking (future)
-│   │   └── api/           # FastAPI routes (future)
-│   └── tests/             # pytest test suite
-├── frontend/              # React + TypeScript app (future)
-├── docs/                  # Documentation
-├── benchmarks/            # Benchmark scripts & results
-└── README.md
+
+The frontend sends user actions and renders the state returned by the API; it does not simulate elevator behavior on its own. The FastAPI layer owns the in-memory demo session, selects a dispatch algorithm for new hall calls, and exposes the current state. The simulation engine advances routes one tick at a time, while the elevator model enforces its physical boundaries, capacity, and door transitions.
+
+---
+
+## Hall Calls vs Car Requests
+
+These are intentionally separate requests.
+
+| Request | Input | What happens |
+| --- | --- | --- |
+| **Hall call** | Floor + direction | A dispatch algorithm selects an elevator and adds only the pickup floor. |
+| **Car request** | Elevator ID + destination floor | The destination is added directly to that selected elevator’s route; no dispatch is needed. |
+
+For example, a **Floor 6 UP** call is assigned before any destination is known. Once the doors open and the rider selects Floor 9 inside `E1`, a car request adds Floor 9 to `E1` only.
+
+Switching algorithms affects future hall calls only; existing assignments are left in place.
+
+---
+
+## Dispatch Algorithms
+
+### First-Come, First-Served (FCFS)
+
+FCFS is the intentionally simple baseline. It processes pending hall calls in arrival order, then assigns each to the elevator with the fewest queued stops. It does not optimize for distance or travel direction.
+
+### Nearest Suitable Car
+
+Nearest Suitable Car is direction- and position-aware. It ranks elevators using the following priority order:
+
+1. Moving toward the caller in the caller’s requested direction
+2. Idle
+3. Moving toward the caller in the wrong direction
+4. Moving away from the caller
+
+Within the same tier, the closer elevator wins; equal distances use elevator ID as the deterministic tie-breaker.
+
+For a **Floor 6 UP** call, an elevator at Floor 5 moving DOWN is physically close but heading the wrong way. An elevator at Floor 3 moving UP is already compatible with the requested trip, so it is ranked as the more suitable car.
+
+---
+
+## En-Route Pickup
+
+When a compatible car is already on the caller’s path, ElevatorOS inserts the pickup before farther stops instead of making the rider wait for a reversal.
+
+```text
+E1 at Floor 4, moving UP
+Current route: [10]
+New hall call: Floor 6 UP
+
+Updated route: [6, 10]
 ```
 
-## Current Status: Milestone 1
+---
 
-Core simulation foundation — domain models and deterministic clock.
+## Simulation Engine
 
-## Getting Started
+The engine is tick-based rather than wall-clock-driven. Given the same interaction sequence, it produces the same assignments, ordered routes, events, and state transitions every time.
 
-### Prerequisites
+```text
+MOVING
+  |
+  v
+STOPPED
+  |
+  v
+OPENING
+  |
+  v
+OPEN
+  |
+  v
+CLOSING
+  |
+  v
+CLOSED
+```
 
-- Python 3.11+
-- pip
+The backend enforces the important physical rules: elevators stay within their floor bounds, cannot move with doors open, clear a hall call only when the assigned elevator reaches its pickup floor and opens, and apply car requests only to the selected elevator.
 
-### Install & Test
+---
+
+## Testing
+
+**188 backend tests passing** cover movement, door states, dispatch selection, hall calls, car requests, same-floor calls, duplicate interactions, algorithm switching, reset behavior, en-route pickups, deterministic replay, physical invariants, and API/CORS behavior.
+
+Frontend behavior is covered with Vitest and Testing Library. The production frontend build, backend type checks with mypy, and editable package installation are also verified.
+
+> Independent stress-review verdict: **CORE SIMULATOR STABLE**
+
+Run the full backend verification suite from the repository root:
+
+```bash
+make verify
+```
+
+---
+
+## Tech Stack
+
+| Layer | Technologies |
+| --- | --- |
+| Frontend | React, TypeScript, Vite, Vitest, Testing Library |
+| Backend | Python, FastAPI, Pydantic |
+| Quality | Pytest, mypy |
+| Deployment | Render |
+
+---
+
+## API
+
+| Endpoint | Description |
+| --- | --- |
+| `GET /state` | Current tick, algorithm, elevators, active hall calls, and recent events. |
+| `POST /hall-call` | Creates and dispatches a hall call from a floor and direction. |
+| `POST /car-request` | Adds a destination to one selected elevator. |
+| `POST /tick` | Advances the simulation by exactly one deterministic tick. |
+| `POST /reset` | Restores the default empty 10-floor, two-elevator session. |
+| `POST /algorithm` | Selects FCFS or Nearest Suitable Car for future hall calls. |
+
+---
+
+## Running Locally
+
+### Backend
 
 ```bash
 cd backend
+
+python -m venv .venv
+source .venv/bin/activate
 pip install -e ".[dev]"
-python -m pytest tests/ -v
+uvicorn app.main:app --reload --port 8000
 ```
 
-## Architecture Principles
+### Frontend
 
-- **Simulation is independent** — no coupling to API or UI frameworks.
-- **Algorithms are interchangeable** — dispatch strategies plug in via a common interface.
-- **Clock is deterministic** — tick-based, reproducible, no wall-clock dependency.
-- **Models are clean** — dataclasses with validation, no hidden side effects.
+Open another terminal:
 
-## License
+```bash
+cd frontend
 
-MIT
+npm install
+npm run dev
+```
+
+During local development, Vite proxies `/api/*` requests to the backend at `http://127.0.0.1:8000`. A deployed frontend instead uses its `VITE_API_BASE_URL` environment variable.
+
+---
+
+## Project Structure
+
+```text
+ElevatorOS/
+├── backend/
+│   ├── app/
+│   │   ├── algorithms/       # Interchangeable dispatch strategies
+│   │   ├── simulation/       # Domain models and deterministic engine
+│   │   └── main.py           # Minimal FastAPI facade
+│   └── tests/                # Backend test suite
+├── frontend/
+│   └── src/                  # React simulator UI
+├── docs/                     # Project documentation and UI preview
+├── benchmarks/               # Benchmark notes and results
+├── Makefile                  # Backend verification commands
+└── README.md
+```
+
+---
+
+## Future Improvements
+
+- Average wait-time and total service-time reporting
+- LOOK/SCAN dispatch strategies
+- Configurable floor and elevator counts
+- Performance visualizations
