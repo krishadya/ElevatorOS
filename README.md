@@ -221,7 +221,6 @@ ElevatorOS/
 ├── frontend/
 │   └── src/                  # React simulator UI
 ├── docs/                     # Project documentation and UI preview
-├── benchmarks/               # Benchmark notes and results
 ├── Makefile                  # Backend verification commands
 └── README.md
 ```

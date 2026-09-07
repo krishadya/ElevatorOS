@@ -37,3 +37,9 @@ Thumbs.db
 
 # Benchmarks output
 benchmarks/results/
+
+# Local-only project guidance and scratch work
+scratch_test.py
+scratch*.py
+AGENTS.md
+docs/REVIEW_CHECKLIST.md
