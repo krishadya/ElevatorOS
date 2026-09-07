@@ -10,6 +10,7 @@ ElevatorOS lets users create hall calls, compare dispatch algorithms, watch elev
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.7-3178C6?logo=typescript&logoColor=white)
 ![Tests](https://img.shields.io/badge/Tests-188%20passing-22c55e)
 ![Live Deployment](https://img.shields.io/badge/Deployment-Live-2563eb?logo=render&logoColor=white)
+![License](https://img.shields.io/badge/License-MIT-yellow.svg)
 
 [Live App](https://elevatoros.onrender.com/) • [Features](#features) • [Architecture](#architecture) • [Algorithms](#dispatch-algorithms) • [Testing](#testing)
 
@@ -317,6 +318,12 @@ ElevatorOS/
 ├── Makefile
 └── README.md
 ```
+
+---
+
+## License
+
+This project is licensed under the MIT License.
 
 ---
 
