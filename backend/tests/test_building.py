@@ -108,6 +108,46 @@ class TestBuildingFloorValidation:
         b.add_request(r)
         assert len(b.active_requests) == 1
 
+    def test_duplicate_up_request_returns_existing_active_call(self):
+        b = Building(num_floors=10)
+        first = ElevatorRequest(
+            id="R1", origin_floor=6, direction=Direction.UP, timestamp=0
+        )
+        duplicate = ElevatorRequest(
+            id="R2", origin_floor=6, direction=Direction.UP, timestamp=1
+        )
+
+        assert b.add_request(first) is first
+        assert b.add_request(duplicate) is first
+        assert b.active_requests == [first]
+
+    def test_duplicate_down_request_returns_existing_active_call(self):
+        b = Building(num_floors=10)
+        first = ElevatorRequest(
+            id="R1", origin_floor=6, direction=Direction.DOWN, timestamp=0
+        )
+        duplicate = ElevatorRequest(
+            id="R2", origin_floor=6, direction=Direction.DOWN, timestamp=1
+        )
+
+        b.add_request(first)
+        assert b.add_request(duplicate) is first
+        assert b.active_requests == [first]
+
+    def test_up_and_down_requests_are_distinct_active_calls(self):
+        b = Building(num_floors=10)
+        up = ElevatorRequest(
+            id="R1", origin_floor=6, direction=Direction.UP, timestamp=0
+        )
+        down = ElevatorRequest(
+            id="R2", origin_floor=6, direction=Direction.DOWN, timestamp=1
+        )
+
+        b.add_request(up)
+        b.add_request(down)
+
+        assert b.active_requests == [up, down]
+
 
 class TestBuildingQueries:
     """Verify helper query methods."""

@@ -13,11 +13,14 @@ DOOR_OPENING_TICKS: int = 1
 DOOR_CLOSING_TICKS: int = 1
 """Ticks for doors to transition from OPEN → CLOSED (via CLOSING)."""
 
-DOOR_OPEN_DWELL_TICKS: int = 2
+DOOR_OPEN_DWELL_TICKS: int = 4
 """Minimum ticks doors remain OPEN for passenger exchange.
 
-The engine keeps doors open for at least this many ticks. If passengers
-are still boarding (1 per tick), the dwell extends automatically.
+The engine keeps doors open for this countdown plus one initial exchange
+tick, giving a no-work pickup five visible engine ticks before closing.
+At the frontend's 750 ms Play cadence, that is about 3.75 seconds.
+If passengers are still boarding (1 per tick), the dwell extends
+automatically.
 """
 
 # ── Passenger throughput ─────────────────────────────────────────────

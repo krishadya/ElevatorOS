@@ -9,6 +9,7 @@ description = "Multi-elevator dispatch simulation and benchmarking platform"
 requires-python = ">=3.11"
 dependencies = [
     "fastapi>=0.115",
+    "uvicorn>=0.30",
 ]
 
 [project.optional-dependencies]

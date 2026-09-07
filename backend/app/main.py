@@ -164,14 +164,21 @@ def create_hall_call(
     session = _session(request)
     _validate_floor(session, body.floor)
 
-    call = ElevatorRequest(
+    new_call = ElevatorRequest(
         id=f"HC{session.next_hall_call_id}",
         origin_floor=body.floor,
         direction=Direction[body.direction],
         timestamp=session.engine.current_tick,
     )
+    call = session.building.add_request(new_call)
+
+    if call is not new_call:
+        return {
+            "hall_call": _hall_call_payload(call),
+            "assignment": {"elevator_id": call.assigned_elevator_id},
+        }
+
     session.next_hall_call_id += 1
-    session.building.add_request(call)
 
     assignments = session.algorithm.dispatch(
         pending_requests=[call],

@@ -213,10 +213,9 @@ class TestCarRequestInvalidFloor:
 
 
 class TestCarRequestRepeatedDestination:
-    """Pressing the same floor twice adds it twice deterministically."""
+    """Repeated destination presses do not duplicate an active stop."""
 
-    def test_car_request_repeated_destination_deterministic(self) -> None:
-        """Duplicate stops are allowed (engine handles them correctly)."""
+    def test_car_request_repeated_destination_adds_one_stop(self) -> None:
         building = Building.create(num_floors=10, num_elevators=1)
 
         cr1 = CarRequest(id="CR1", elevator_id="E1", destination_floor=5, timestamp=0)
@@ -226,7 +225,7 @@ class TestCarRequestRepeatedDestination:
 
         e1 = building.get_elevator("E1")
         assert e1 is not None
-        assert e1.stops == [5, 5]
+        assert e1.stops == [5]
 
 
 class TestCarRequestWithExistingStops:
@@ -243,6 +242,23 @@ class TestCarRequestWithExistingStops:
         process_car_request(cr, building)
 
         assert e1.stops == [3, 6, 9]
+
+    def test_destination_can_be_requested_again_after_service(self) -> None:
+        building = Building.create(num_floors=10, num_elevators=1)
+        e1 = building.get_elevator("E1")
+        assert e1 is not None
+
+        process_car_request(
+            CarRequest(id="CR1", elevator_id="E1", destination_floor=5, timestamp=0),
+            building,
+        )
+        e1.remove_stop(5)
+        process_car_request(
+            CarRequest(id="CR2", elevator_id="E1", destination_floor=5, timestamp=1),
+            building,
+        )
+
+        assert e1.stops == [5]
 
 
 class TestCarRequestWhileElevatorStopped:

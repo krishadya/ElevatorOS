@@ -73,6 +73,33 @@ def test_active_hall_call_appears_after_creation(client: TestClient) -> None:
     ]
 
 
+def test_duplicate_hall_call_preserves_original_assignment_and_route(
+    client: TestClient,
+) -> None:
+    first = client.post("/hall-call", json={"floor": 6, "direction": "UP"})
+    duplicate = client.post("/hall-call", json={"floor": 6, "direction": "UP"})
+
+    assert duplicate.status_code == 200
+    assert duplicate.json() == first.json()
+    state = client.get("/state").json()
+    assert state["active_hall_calls"] == [first.json()["hall_call"]]
+    assert state["elevators"][0]["stops"] == [6]
+    assert state["elevators"][1]["stops"] == []
+
+
+def test_opposite_direction_hall_calls_on_one_floor_are_distinct(
+    client: TestClient,
+) -> None:
+    client.post("/hall-call", json={"floor": 6, "direction": "UP"})
+    client.post("/hall-call", json={"floor": 6, "direction": "DOWN"})
+
+    calls = client.get("/state").json()["active_hall_calls"]
+    assert [(call["floor"], call["direction"]) for call in calls] == [
+        (6, "UP"),
+        (6, "DOWN"),
+    ]
+
+
 def test_tick_advances_exactly_one_tick(client: TestClient) -> None:
     response = client.post("/tick")
 
@@ -106,6 +133,16 @@ def test_car_request_only_changes_the_named_elevator(client: TestClient) -> None
     elevators = client.get("/state").json()["elevators"]
     assert elevators[0]["stops"] == []
     assert elevators[1]["stops"] == [8]
+
+
+def test_duplicate_car_request_does_not_add_another_stop(client: TestClient) -> None:
+    client.post("/car-request", json={"elevator_id": "E2", "destination_floor": 8})
+    response = client.post(
+        "/car-request", json={"elevator_id": "E2", "destination_floor": 8}
+    )
+
+    assert response.status_code == 200
+    assert response.json()["stops"] == [8]
 
 
 def test_algorithm_switch_only_changes_future_hall_call_selection(

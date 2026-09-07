@@ -8,6 +8,7 @@ emission, and building state synchronization.
 import pytest
 
 from app.simulation.building import Building
+from app.simulation.car_request import CarRequest, process_car_request
 from app.simulation.clock import SimulationClock
 from app.simulation.constants import (
     DOOR_CLOSING_TICKS,
@@ -270,6 +271,50 @@ class TestEngineDoorLifecycle:
         emitted_types = {e.event_type for e in engine.events}
         assert door_types.issubset(emitted_types)
 
+    def test_open_dwell_is_four_ticks_before_closing(self):
+        """The visualizer has a deterministic five-tick destination window."""
+        building = _make_simple_building()
+        engine = _make_engine(building)
+        elev = building.elevators[0]
+
+        elev.add_stop(1)
+        engine.tick()  # STOPPED, doors OPENING
+        engine.tick()  # doors OPEN
+        assert elev.door_state == DoorState.OPEN
+
+        for _ in range(DOOR_OPEN_DWELL_TICKS):
+            engine.tick()
+            assert elev.door_state == DoorState.OPEN
+
+        engine.tick()
+        assert elev.door_state == DoorState.CLOSING
+        assert DOOR_OPEN_DWELL_TICKS == 4
+
+    def test_car_request_is_accepted_during_open_dwell(self):
+        building = _make_simple_building()
+        engine = _make_engine(building)
+        elev = building.elevators[0]
+
+        elev.add_stop(1)
+        engine.tick()  # STOPPED, doors OPENING
+        engine.tick()  # doors OPEN
+
+        for _ in range(DOOR_OPEN_DWELL_TICKS):
+            engine.tick()
+        assert elev.door_state == DoorState.OPEN
+
+        process_car_request(
+            CarRequest(
+                id="CR1",
+                elevator_id="E1",
+                destination_floor=5,
+                timestamp=engine.current_tick,
+            ),
+            building,
+        )
+
+        assert elev.stops == [1, 5]
+
     def test_elevator_goes_idle_after_last_stop(self):
         building = _make_simple_building()
         engine = _make_engine(building)
@@ -308,7 +353,7 @@ class TestEngineHallCallLifecycle:
         other_call = ElevatorRequest(
             id="R2",
             origin_floor=2,
-            direction=Direction.UP,
+            direction=Direction.DOWN,
             timestamp=0,
             assigned_elevator_id="E2",
         )

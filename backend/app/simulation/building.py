@@ -136,8 +136,12 @@ class Building:
             )
         self.waiting_passengers.append(passenger)
 
-    def add_request(self, request: ElevatorRequest) -> None:
-        """Register a new hall-call request.
+    def add_request(self, request: ElevatorRequest) -> ElevatorRequest:
+        """Register a hall-call request and return its active counterpart.
+
+        Active hall calls are unique by origin floor and direction.  Repeated
+        presses return the original active request so callers can preserve its
+        assignment instead of dispatching another elevator.
 
         Raises:
             ValueError: If the request's origin floor is outside the building.
@@ -147,7 +151,16 @@ class Building:
                 f"Request {request.id} origin floor {request.origin_floor} "
                 f"is outside building range [{self.min_floor}, {self.max_floor}]"
             )
+
+        for active_request in self.active_requests:
+            if (
+                active_request.origin_floor == request.origin_floor
+                and active_request.direction == request.direction
+            ):
+                return active_request
+
         self.active_requests.append(request)
+        return request
 
     def remove_serviced_requests(
         self, elevator_id: str, floor: int

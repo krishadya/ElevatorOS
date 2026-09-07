@@ -44,7 +44,8 @@ def process_car_request(car_request: CarRequest, building: Building) -> None:
     """Process a car request by adding the destination to the elevator's route.
 
     This bypasses all dispatch logic. The destination floor is appended
-    directly to the named elevator's stop list.
+    directly to the named elevator's stop list unless it is already queued
+    for that elevator.
 
     Args:
         car_request: The in-car destination request.
@@ -60,5 +61,6 @@ def process_car_request(car_request: CarRequest, building: Building) -> None:
             f"Elevator '{car_request.elevator_id}' not found in building."
         )
 
-    # add_stop validates floor bounds and raises ValueError if invalid
-    elevator.add_stop(car_request.destination_floor)
+    if car_request.destination_floor not in elevator.stops:
+        # add_stop validates floor bounds and raises ValueError if invalid
+        elevator.add_stop(car_request.destination_floor)
