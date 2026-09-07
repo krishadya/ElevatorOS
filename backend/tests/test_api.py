@@ -30,6 +30,19 @@ def test_state_starts_with_default_simulation(client: TestClient) -> None:
     assert all(elevator["stops"] == [] for elevator in state["elevators"])
 
 
+def test_cors_allows_the_local_frontend_origin(client: TestClient) -> None:
+    response = client.options(
+        "/state",
+        headers={
+            "Origin": "http://localhost:5173",
+            "Access-Control-Request-Method": "GET",
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.headers["access-control-allow-origin"] == "http://localhost:5173"
+
+
 def test_hall_call_dispatches_through_fcfs_without_destination(
     client: TestClient,
 ) -> None:

@@ -6,10 +6,12 @@ algorithms, and the deterministic engine remain framework-independent.
 
 from __future__ import annotations
 
+import os
 from dataclasses import dataclass
 from typing import Literal
 
 from fastapi import FastAPI, HTTPException, Request
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 from app.algorithms.base import DispatchAlgorithm
@@ -86,6 +88,16 @@ class SimulationSession:
 
 
 app = FastAPI(title="ElevatorOS API")
+allowed_origins = ["http://localhost:5173"]
+if frontend_origin := os.getenv("ELEVATOROS_FRONTEND_ORIGIN"):
+    allowed_origins.append(frontend_origin)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=allowed_origins,
+    allow_methods=["GET", "POST"],
+    allow_headers=["Content-Type"],
+)
 app.state.simulation = SimulationSession.create_default()
 
 
