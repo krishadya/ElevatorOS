@@ -38,6 +38,55 @@ button:disabled { cursor: not-allowed; opacity: 0.48; }
 .sr-only { height: 1px; margin: -1px; overflow: hidden; padding: 0; position: absolute; width: 1px; clip: rect(0, 0, 0, 0); white-space: nowrap; }
 
 .app-shell { margin: 0 auto; max-width: 1540px; min-height: 100vh; padding: 24px clamp(16px, 2vw, 30px) 38px; }
+.simulator-shell { animation: simulator-enter 260ms ease-out; }
+
+.initial-loading-screen {
+  align-items: center;
+  background: radial-gradient(circle at 50% 42%, #193d58 0, var(--navy-950) 47%, #08121d 100%);
+  display: grid;
+  justify-items: center;
+  min-height: 100vh;
+  overflow: hidden;
+  padding: 24px;
+  position: relative;
+}
+.initial-loading-screen::before { border: 1px solid rgba(105, 203, 233, 0.14); border-radius: 50%; content: ""; height: min(72vw, 720px); position: absolute; width: min(72vw, 720px); }
+.loading-console {
+  background: linear-gradient(145deg, rgba(25, 57, 82, 0.96), rgba(10, 26, 40, 0.98));
+  border: 1px solid rgba(115, 211, 239, 0.4);
+  border-radius: 18px;
+  box-shadow: 0 28px 70px rgba(0, 0, 0, 0.4), inset 0 1px rgba(225, 250, 255, 0.1);
+  color: #f0fbff;
+  max-width: 430px;
+  overflow: hidden;
+  padding: 30px 34px 32px;
+  position: relative;
+  text-align: center;
+  width: min(100%, 430px);
+  z-index: 1;
+}
+.loading-console::before { background: linear-gradient(90deg, transparent, rgba(94, 216, 247, 0.5), transparent); content: ""; height: 1px; left: 20%; position: absolute; right: 20%; top: 0; }
+.loading-brand { color: #8ee9ff; font-size: 0.72rem; font-weight: 850; letter-spacing: 0.22em; margin: 0 0 20px; text-transform: uppercase; }
+.loading-shaft { background: linear-gradient(90deg, #3f5b6d, #172d3e 8%, #071722 15% 85%, #172d3e 92%, #3f5b6d); border: 1px solid #75b9d0; border-radius: 8px; box-shadow: inset 0 0 18px rgba(0, 0, 0, 0.75), 0 0 0 5px rgba(120, 222, 248, 0.06); height: 156px; margin: 0 auto 24px; overflow: hidden; position: relative; width: 108px; }
+.loading-shaft::before, .loading-shaft::after { background: linear-gradient(#9dc3d2, #4e7284 30%, #b4d5e1 50%, #4e7284 70%, #9dc3d2); bottom: 0; content: ""; position: absolute; top: 0; width: 3px; }
+.loading-shaft::before { left: 16px; }
+.loading-shaft::after { right: 16px; }
+.loading-floor-line { border-top: 1px solid rgba(158, 211, 228, 0.38); left: 8px; position: absolute; right: 8px; }
+.loading-floor-line-one { top: 26px; }
+.loading-floor-line-two { top: 58px; }
+.loading-floor-line-three { top: 90px; }
+.loading-floor-line-four { top: 122px; }
+.loading-cabin { background: linear-gradient(135deg, #6d8fa2, #244960 58%, #152f43); border: 1px solid #afd6e5; border-radius: 3px 3px 1px 1px; bottom: 16px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.45), inset 0 1px rgba(255, 255, 255, 0.35); display: flex; gap: 1px; height: 31px; left: 27px; padding: 3px; position: absolute; right: 27px; }
+.loading-cabin span { background: linear-gradient(100deg, #7894a2, #d7e4e9 48%, #7995a4); flex: 1; }
+.loading-cabin span:first-child { border-right: 1px solid #28495d; }
+.loading-cabin { animation: loading-cabin-travel 3.2s ease-in-out infinite alternate; }
+.loading-console h1 { font-size: clamp(1.45rem, 5vw, 1.8rem); letter-spacing: -0.04em; margin: 0; }
+.loading-primary-message { color: #c5e5ef; font-size: 0.88rem; margin: 10px 0 0; }
+.loading-secondary-message { color: #8fe6fb; font-size: 0.76rem; line-height: 1.45; margin: 17px auto 0; max-width: 315px; }
+.loading-error h1 { color: #ffd0d6; }
+.loading-error p { color: #c6dce6; font-size: 0.85rem; line-height: 1.5; margin: 10px auto 20px; max-width: 300px; }
+.loading-error button { background: var(--cyan); border: 1px solid #8de6fa; border-radius: 8px; color: #05263a; font-size: 0.82rem; font-weight: 850; padding: 9px 15px; transition: background 160ms ease, transform 160ms ease; }
+.loading-error button:hover { background: #62dbf4; transform: translateY(-1px); }
 
 .simulator-toolbar {
   align-items: center;
@@ -296,6 +345,14 @@ button:disabled { cursor: not-allowed; opacity: 0.48; }
 
 @keyframes call-illumination {
   50% { box-shadow: inset 0 -2px rgba(1, 78, 111, 0.28), 0 0 0 4px rgba(22, 178, 220, 0.2); }
+}
+@keyframes loading-cabin-travel {
+  from { transform: translateY(0); }
+  to { transform: translateY(-72px); }
+}
+@keyframes simulator-enter {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 @media (max-width: 1120px) {

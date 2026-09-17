@@ -1,5 +1,5 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import * as api from "./api/client";
 import type { SimulationState } from "./api/types";
@@ -67,7 +67,82 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
+afterEach(() => {
+  vi.useRealTimers();
+});
+
 describe("ElevatorOS visualizer", () => {
+  it("shows the loading screen before the initial state arrives", () => {
+    mockedApi.getState.mockReturnValue(new Promise(() => undefined));
+
+    render(<App />);
+
+    expect(screen.getByRole("heading", { name: "Starting simulation..." })).toBeInTheDocument();
+    expect(screen.getByText("Connecting to the simulation engine")).toBeInTheDocument();
+    expect(screen.queryByText("Floor 1")).not.toBeInTheDocument();
+  });
+
+  it("shows the simulator after the initial state arrives", async () => {
+    mockedApi.getState.mockResolvedValue(baseState);
+
+    render(<App />);
+
+    expect(screen.getByRole("heading", { name: "Starting simulation..." })).toBeInTheDocument();
+    expect(await screen.findByText("Floor 1")).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Starting simulation..." })).not.toBeInTheDocument();
+  });
+
+  it("reveals wake-up guidance after the initial delay", async () => {
+    vi.useFakeTimers();
+    mockedApi.getState.mockReturnValue(new Promise(() => undefined));
+
+    render(<App />);
+    expect(screen.queryByText(/backend may take/)).not.toBeInTheDocument();
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(5_000);
+    });
+    expect(screen.getByText(/backend may take a few seconds/)).toBeInTheDocument();
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(15_000);
+    });
+    expect(screen.getByText(/Still waking up/)).toBeInTheDocument();
+  });
+
+  it("shows a retry state after the initial connection limit", async () => {
+    vi.useFakeTimers();
+    mockedApi.getState.mockRejectedValue(new Error("offline"));
+
+    render(<App />);
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(60_000);
+    });
+
+    expect(screen.getByRole("alert")).toHaveTextContent("Couldn't connect to the simulator.");
+    expect(screen.getByRole("button", { name: "Try Again" })).toBeInTheDocument();
+  });
+
+  it("retries the initial connection when Try Again succeeds", async () => {
+    vi.useFakeTimers();
+    mockedApi.getState.mockRejectedValue(new Error("offline"));
+
+    render(<App />);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(60_000);
+    });
+
+    mockedApi.getState.mockResolvedValueOnce(baseState);
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Try Again" }));
+      await Promise.resolve();
+    });
+
+    expect(screen.getByText("Floor 1")).toBeInTheDocument();
+    expect(mockedApi.getState).toHaveBeenCalledTimes(17);
+  });
+
   it("omits impossible hall-call directions at the building bounds", async () => {
     renderApp();
     await screen.findByText("Floor 1");
